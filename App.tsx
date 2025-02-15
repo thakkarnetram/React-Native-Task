@@ -16,8 +16,7 @@ const App: React.FC = () => {
       <Tab.Navigator
         screenOptions={{
           headerShown: false,
-          tabBarShowLabel: false, // We'll handle labels ourselves
-          tabBarStyle: {display: 'none'}, // Hide default tab bar
+          tabBarShowLabel: false,
         }}
         tabBar={props => <CustomTabBar {...props} />}>
         <Tab.Screen
