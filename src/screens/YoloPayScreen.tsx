@@ -11,11 +11,7 @@ import {
   Image,
   ImageBackground,
 } from 'react-native';
-
-// For generating random card data
 import {faker} from '@faker-js/faker';
-
-// For drawing a gradient stroke
 import Svg, {
   Rect,
   Defs,
@@ -23,16 +19,17 @@ import Svg, {
   Stop,
 } from 'react-native-svg';
 
-// Screen width for layout
 const {width} = Dimensions.get('window');
 
-// Replace these with your actual PNG assets
-const CARD_BG = require('../assets/images/cardbg.png');
-const YES_BANK = require('../assets/images/bank.png');
-const EYE_SLASH = require('../assets/images/eye.png');
-const FREEZE_ICON = require('../assets/images/freeze.png');
+// Replace these with your own PNG assets
+const CARD_BG = require('../assets/images/cardbg.png'); // The card background
+const YES_BANK = require('../assets/images/bank.png'); // The top-right logo
+const LOGO = require('../assets/images/logo.png'); // YOLO top-left
+const FREEZE_ICON = require('../assets/images/freeze.png'); // Snowflake or freeze icon
+const RUPAY_LOGO = require('../assets/images/rupay.png'); // RuPay PREPAID
+const FREEZE_CARD_IMAGE = require('../assets/images/freezecard.png'); // Frost image
 
-// -------------- GradientStrokeButton (for pay/card tabs) -------------- //
+// Gradient stroke button for "pay" / "card"
 interface GradientStrokeButtonProps {
   label: string;
   isActive: boolean;
@@ -41,14 +38,12 @@ interface GradientStrokeButtonProps {
   height?: number;
 }
 
-// This component draws a rectangle with a vertical gradient stroke
-// and centers a text label inside. If isActive=true, it fills the rect with white.
 const GradientStrokeButton: React.FC<GradientStrokeButtonProps> = ({
   label,
   isActive,
   onPress,
-  width = 200,
-  height = 120,
+  width = 100,
+  height = 40,
 }) => {
   return (
     <TouchableOpacity
@@ -56,13 +51,11 @@ const GradientStrokeButton: React.FC<GradientStrokeButtonProps> = ({
       onPress={onPress}
       style={{marginRight: 8}}>
       <View style={{width, height}}>
-        {/* The SVG stroke background */}
         <Svg style={StyleSheet.absoluteFill}>
           <Defs>
             <SvgLinearGradient id="tabGradient" x1="0.5" y1="0" x2="0.5" y2="1">
-              {/* Adjust these colors to your preference */}
               <Stop offset="0%" stopColor="#ff0021" />
-              <Stop offset="100%" stopColor="#ff00ff" />
+              <Stop offset="100%" stopColor="#000000" />
             </SvgLinearGradient>
           </Defs>
           <Rect
@@ -70,7 +63,7 @@ const GradientStrokeButton: React.FC<GradientStrokeButtonProps> = ({
             y={0}
             width="100%"
             height="100%"
-            rx={8} // corner radius
+            rx={8}
             ry={8}
             fill={isActive ? '#fff' : 'transparent'}
             stroke="url(#tabGradient)"
@@ -78,7 +71,6 @@ const GradientStrokeButton: React.FC<GradientStrokeButtonProps> = ({
           />
         </Svg>
 
-        {/* Centered label */}
         <View style={styles.tabInner}>
           <Text style={[styles.tabLabel, isActive && {color: '#000'}]}>
             {label.toLowerCase()}
@@ -89,17 +81,16 @@ const GradientStrokeButton: React.FC<GradientStrokeButtonProps> = ({
   );
 };
 
-// -------------- GradientStrokeIconButton (for freeze) -------------- //
+// Gradient stroke icon button for the freeze
 interface GradientStrokeIconButtonProps {
-  icon: any; // PNG require
+  icon: any;
   label: string;
-  isActive: boolean; // If you want a different fill for active
+  isActive: boolean;
   onPress?: () => void;
   width?: number;
   height?: number;
 }
 
-// Similar concept, but we place an icon + text inside
 const GradientStrokeIconButton: React.FC<GradientStrokeIconButtonProps> = ({
   icon,
   label,
@@ -112,9 +103,8 @@ const GradientStrokeIconButton: React.FC<GradientStrokeIconButtonProps> = ({
     <TouchableOpacity
       activeOpacity={0.9}
       onPress={onPress}
-      style={{alignItems: 'center'}}>
+      style={{alignItems: 'center', top: 160, right: 50}}>
       <View style={{width, height, marginBottom: 6}}>
-        {/* The SVG stroke background */}
         <Svg style={StyleSheet.absoluteFill}>
           <Defs>
             <SvgLinearGradient
@@ -124,7 +114,7 @@ const GradientStrokeIconButton: React.FC<GradientStrokeIconButtonProps> = ({
               x2="0.5"
               y2="1">
               <Stop offset="0%" stopColor="#ff0000" />
-              <Stop offset="100%" stopColor="#ff00ff" />
+              <Stop offset="100%" stopColor="#000000" />
             </SvgLinearGradient>
           </Defs>
           <Rect
@@ -132,15 +122,13 @@ const GradientStrokeIconButton: React.FC<GradientStrokeIconButtonProps> = ({
             y={0}
             width="100%"
             height="100%"
-            rx={30} // make it circular if width=height
+            rx={30}
             ry={30}
             fill={isActive ? '#fff' : 'transparent'}
             stroke="url(#freezeGradient)"
             strokeWidth={2}
           />
         </Svg>
-
-        {/* Centered icon */}
         <View style={styles.iconButtonInner}>
           <Image
             source={icon}
@@ -148,20 +136,23 @@ const GradientStrokeIconButton: React.FC<GradientStrokeIconButtonProps> = ({
           />
         </View>
       </View>
-      {/* Label below */}
       <Text style={styles.freezeLabel}>{label.toLowerCase()}</Text>
     </TouchableOpacity>
   );
 };
 
-// -------------- Main PaymentScreen -------------- //
 export default function YoloPayScreen() {
-  // Generate random card data
+  // Card data
   const [cardNumber, setCardNumber] = useState('');
   const [cardExpiry, setCardExpiry] = useState('');
   const [cardCVV, setCardCVV] = useState('');
-  // Track which tab is active
+  // Active tab
   const [activeTab, setActiveTab] = useState<'pay' | 'card'>('card');
+  const sanitizedNumber = cardNumber.replace(/\D/g, '');
+  const chunks = sanitizedNumber.match(/.{1,4}/g) || [];
+  // Freeze animation
+  const [isFrozen, setIsFrozen] = useState(false);
+  const freezeAnim = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
     const number = faker.finance.creditCardNumber();
@@ -194,21 +185,17 @@ export default function YoloPayScreen() {
     setCardCVV(cvv);
   }, []);
 
-  // Freeze animation
-  const [isFrozen, setIsFrozen] = useState(false);
-  const freezeAnim = useRef(new Animated.Value(0)).current;
-
   const handleFreezeToggle = () => {
     if (isFrozen) {
       Animated.timing(freezeAnim, {
         toValue: 0,
-        duration: 400,
+        duration: 600,
         useNativeDriver: true,
       }).start(() => setIsFrozen(false));
     } else {
       Animated.timing(freezeAnim, {
         toValue: 1,
-        duration: 400,
+        duration: 600,
         useNativeDriver: true,
       }).start(() => setIsFrozen(true));
     }
@@ -223,132 +210,122 @@ export default function YoloPayScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header */}
       <Text style={styles.headerTitle}>select payment mode</Text>
       <Text style={styles.headerSubtitle}>
         choose your preferred payment method to make payment.
       </Text>
 
-      {/* Tabs (with gradient stroke) */}
       <View style={styles.tabRow}>
         <GradientStrokeButton
           label="pay"
           isActive={activeTab === 'pay'}
           onPress={() => setActiveTab('pay')}
-          width={100}
-          height={40}
         />
         <GradientStrokeButton
           label="card"
           isActive={activeTab === 'card'}
           onPress={() => setActiveTab('card')}
-          width={100}
-          height={40}
         />
       </View>
 
       <Text style={styles.cardLabel}>YOUR DIGITAL DEBIT CARD</Text>
 
-      {/* Main row: Card (left) + Freeze button (right) */}
       <View style={styles.mainRow}>
-        {/* Card container */}
-        <View style={styles.cardContainer}>
+        <View style={isFrozen ? styles.frozenContainer : styles.cardContainer}>
           <ImageBackground
-            source={CARD_BG}
-            style={styles.cardBackground}
+            source={isFrozen ? FREEZE_CARD_IMAGE : CARD_BG}
+            style={isFrozen ? styles.frozenBackground : styles.cardBackground}
             imageStyle={{borderRadius: 12}}>
-            {/* Card content */}
             <View style={styles.cardContent}>
-              {/* Top row: YOLO + Yes Bank */}
               <View style={styles.topRow}>
-                <Image source={require('../assets/images/logo.png')} />
-                <Image source={YES_BANK} style={styles.bankLogo} />
+                <Image
+                  source={LOGO}
+                  style={isFrozen ? {opacity: 0} : styles.yoloLogo}
+                />
+                <Image
+                  source={YES_BANK}
+                  style={isFrozen ? {opacity: 0} : styles.bankLogo}
+                />
               </View>
 
-              {/* Card Number */}
-              <View style={styles.cardNumberRow}>
-                <Text style={styles.cardNumberText}>
-                  {cardNumber.slice(0, 4)}
-                </Text>
-                <Text style={styles.cardNumberText}>
-                  {cardNumber.slice(4, 8)}
-                </Text>
-                <Text style={styles.cardNumberText}>
-                  {cardNumber.slice(8, 12)}
-                </Text>
-                <Text style={styles.cardNumberText}>
-                  {cardNumber.slice(12, 16)}
-                </Text>
-              </View>
+              <View style={isFrozen ? {opacity: 0} : styles.numberAndExpiryRow}>
+                <View style={isFrozen ? {opacity: 0} : styles.numberColumn}>
+                  <View style={isFrozen ? {opacity: 0} : styles.cardNumberText}>
+                    {chunks.map((chunk, index) => (
+                      <Text
+                        key={index}
+                        style={isFrozen ? {opacity: 0} : styles.cardNumberText}>
+                        {chunk}
+                      </Text>
+                    ))}
+                  </View>
+                </View>
 
-              {/* Expiry + CVV */}
-              <View style={styles.infoRow}>
-                <Text style={styles.expiryText}>expiry {cardExpiry}</Text>
-                <View style={styles.cvvContainer}>
-                  <Text style={styles.cvvLabel}>cvv</Text>
-                  <Text style={styles.cvvValue}>***</Text>
-                  <Image source={EYE_SLASH} style={styles.eyeIcon} />
+                <View style={isFrozen ? {opacity: 0} : styles.expiryCvvColumn}>
+                  <Text style={styles.expirylabel}>expiry</Text>
+                  <Text style={styles.expiryText}>{cardExpiry}</Text>
+                  <View style={isFrozen ? {opacity: 0} : styles.cvvRow}>
+                    <Text style={styles.expirylabel}>expiry</Text>
+                    <Text style={styles.expiryText}>{cardExpiry}</Text>
+                  </View>
                 </View>
               </View>
 
-              {/* Copy details + brand */}
-              <TouchableOpacity onPress={handleCopyDetails}>
+              <TouchableOpacity
+                onPress={handleCopyDetails}
+                style={isFrozen ? {opacity: 0} : {flexDirection: 'row'}}>
+                <Image
+                  source={require('../assets/icons/copy.png')}
+                  style={styles.copyIcon}
+                />
                 <Text style={styles.copyText}>copy details</Text>
               </TouchableOpacity>
-              <Image source={require('../assets/images/rupay.png')} />
-            </View>
 
-            {/* Frost overlay */}
-            <Animated.View>
-              {isFrozen && (
-                <View style={styles.frozenTextContainer}>
-                  <Image source={require('../assets/images/freezecard.png')} />
-                </View>
-              )}
-            </Animated.View>
+              <Image
+                source={RUPAY_LOGO}
+                style={isFrozen ? {opacity: 0} : styles.rupayLogo}
+              />
+            </View>
           </ImageBackground>
         </View>
 
-        {/* Freeze button (with gradient stroke) */}
+        {/* Freeze button */}
         <GradientStrokeIconButton
           icon={FREEZE_ICON}
           label={isFrozen ? 'unfreeze' : 'freeze'}
           isActive={isFrozen}
           onPress={handleFreezeToggle}
-          width={60}
-          height={60}
         />
       </View>
     </SafeAreaView>
   );
 }
 
-// -------------- Styles -------------- //
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000', // black background
+    backgroundColor: '#000',
     paddingHorizontal: 20,
     paddingTop: 20,
   },
-  // Header
   headerTitle: {
-    marginTop: 20,
+    marginTop: 30,
     fontSize: 20,
     fontWeight: '600',
     color: '#fff',
-    textTransform: 'uppercase',
     marginBottom: 4,
   },
   headerSubtitle: {
+    marginTop: 20,
     fontSize: 16,
     color: '#aaa',
     marginBottom: 20,
   },
-  // Tab row
   tabRow: {
+    marginTop: 30,
     flexDirection: 'row',
     marginBottom: 16,
+    justifyContent: 'center',
   },
   tabInner: {
     flex: 1,
@@ -357,73 +334,101 @@ const styles = StyleSheet.create({
   },
   tabLabel: {
     color: '#999',
-    textTransform: 'uppercase',
     fontWeight: '500',
   },
-  // Card label
   cardLabel: {
-    color: '#777',
-    fontSize: 14,
-    marginBottom: 10,
-    textTransform: 'uppercase',
+    marginTop: 20,
+    color: '#ffffff',
+    fontSize: 16,
+    marginBottom: 5,
   },
-  // Main row
   mainRow: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     justifyContent: 'space-between',
   },
-  // Card container
   cardContainer: {
-    marginTop: 50,
-    backgroundColor: 'white',
-    width: width * 0.45, // smaller than before
-    height: width * 0.81, // keep ratio to not be too big
+    marginTop: 30,
+    width: 250,
+    height: 400,
+    padding: 8,
+    marginVertical: 4,
+    borderWidth: 0.2,
+    borderRadius: 8,
+    shadowColor: 'grey',
+    shadowOffset: {width: 0, height: 1},
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 4,
+  },
+  frozenContainer: {
+    marginTop: 30,
+    width: 250,
+    height: 400,
+    padding: 8,
+    marginVertical: 4,
+    borderWidth: 0.2,
+    borderRadius: 20,
   },
   cardBackground: {
-    flex: 1,
+    width: '100%',
+    height: '100%',
     borderRadius: 12,
-    width: 250,
-    height: 500,
+  },
+  frozenBackground: {
+    width: '120%',
+    height: '120%',
+    right: 15,
+    bottom: 60,
   },
   cardContent: {
     flex: 1,
-    padding: 12,
+    padding: 16,
     justifyContent: 'space-between',
   },
   topRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
   },
-  brandText: {
-    color: '#a62929',
-    fontSize: 18,
-    fontWeight: '700',
-  },
-  bankLogo: {
-    width: 50,
-    height: 20,
+  yoloLogo: {
+    width: 60,
+    height: 25,
     resizeMode: 'contain',
   },
-  cardNumberRow: {
+  bankLogo: {
+    width: 80,
+    height: 30,
+    resizeMode: 'contain',
+  },
+  numberAndExpiryRow: {
     flexDirection: 'row',
     marginTop: 10,
+  },
+  numberColumn: {
+    flexDirection: 'column',
+    marginRight: 16,
   },
   cardNumberText: {
     color: '#fff',
     fontSize: 16,
-    marginRight: 6,
+    marginBottom: 6,
   },
-  infoRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 4,
+  expiryCvvColumn: {
+    justifyContent: 'flex-start',
+  },
+  expirylabel: {
+    color: '#a9a9a9',
+    fontSize: 15,
+    marginBottom: 10,
+    left: 20,
   },
   expiryText: {
     color: '#fff',
-    fontSize: 14,
+    fontSize: 18,
+    marginBottom: 10,
+    left: 20,
   },
-  cvvContainer: {
+  cvvRow: {
     flexDirection: 'row',
     alignItems: 'center',
   },
@@ -437,33 +442,26 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginRight: 4,
   },
-  eyeIcon: {
-    width: 14,
-    height: 14,
-    tintColor: '#fff',
+  copyIcon: {
+    width: 20,
+    height: 20,
+    marginTop: 10,
+    tintColor: 'red',
   },
   copyText: {
     color: '#ff0000',
-    fontSize: 14,
+    fontSize: 16,
     marginTop: 10,
+    marginLeft: 5,
   },
-  rupayText: {
-    color: '#fff',
-    fontSize: 14,
-    marginTop: 6,
+  rupayLogo: {
+    width: 80,
+    height: 40,
+    resizeMode: 'contain',
+    marginTop: 10,
+    alignSelf: 'flex-end',
   },
-  frozenTextContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom:180,
-  },
-  frozenText: {
-    color: '#000',
-    fontSize: 20,
-    fontWeight: '700',
-  },
-  // Freeze Icon Button
+  // Freeze overlay container
   iconButtonInner: {
     flex: 1,
     alignItems: 'center',
@@ -477,7 +475,6 @@ const styles = StyleSheet.create({
   freezeLabel: {
     color: '#fff',
     fontSize: 12,
-    textTransform: 'uppercase',
     fontWeight: '600',
   },
 });
