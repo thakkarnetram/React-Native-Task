@@ -146,6 +146,7 @@ export default function YoloPayScreen() {
   const [cardNumber, setCardNumber] = useState('');
   const [cardExpiry, setCardExpiry] = useState('');
   const [cardCVV, setCardCVV] = useState('');
+  const [showCVV, setShowCVV] = useState(false);
   // Active tab
   const [activeTab, setActiveTab] = useState<'pay' | 'card'>('card');
   const sanitizedNumber = cardNumber.replace(/\D/g, '');
@@ -265,8 +266,16 @@ export default function YoloPayScreen() {
                   <Text style={styles.expirylabel}>expiry</Text>
                   <Text style={styles.expiryText}>{cardExpiry}</Text>
                   <View style={isFrozen ? {opacity: 0} : styles.cvvRow}>
-                    <Text style={styles.expirylabel}>expiry</Text>
-                    <Text style={styles.expiryText}>{cardExpiry}</Text>
+                    <Text style={styles.expirylabel}>cvv</Text>
+                    <Text style={styles.cvvText}>{showCVV ? cardCVV : '***'}</Text>
+                    <View>
+                      <TouchableOpacity onPress={() => setShowCVV(!showCVV)}>
+                        <Image
+                          source={require('../assets/icons/eye.png')}
+                          style={{width: 30, height: 30, left: 5}}
+                        />
+                      </TouchableOpacity>
+                    </View>
                   </View>
                 </View>
               </View>
@@ -380,6 +389,10 @@ const styles = StyleSheet.create({
     height: '120%',
     right: 15,
     bottom: 60,
+  },
+  cvvText: {
+    top: 12,
+    fontSize: 25,
   },
   cardContent: {
     flex: 1,
